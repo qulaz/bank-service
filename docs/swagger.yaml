@@ -1,0 +1,340 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.AccountCreateRequest:
+    properties:
+      currency:
+        enum:
+        - USD
+        - EUR
+        - RUB
+        type: string
+    required:
+    - currency
+    type: object
+  models.AccountResponse:
+    properties:
+      balance:
+        type: number
+      currency:
+        type: string
+      id:
+        type: integer
+      number:
+        type: string
+    type: object
+  models.AccountsResponse:
+    properties:
+      accounts:
+        items:
+          $ref: '#/definitions/models.AccountResponse'
+        type: array
+    type: object
+  models.OTPResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.OTPVerifyRequest:
+    properties:
+      code:
+        description: Клиент отправляет как строку
+        type: string
+      user_id:
+        type: integer
+    required:
+    - code
+    - user_id
+    type: object
+  models.TransactionResponse:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      from_account_id:
+        type: integer
+      id:
+        type: integer
+      reference_number:
+        type: string
+      status:
+        type: string
+      to_account_id:
+        type: integer
+      type:
+        $ref: '#/definitions/models.TransactionType'
+    type: object
+  models.TransactionType:
+    enum:
+    - deposit
+    - withdraw
+    - transfer
+    type: string
+    x-enum-varnames:
+    - TransactionTypeDeposit
+    - TransactionTypeWithdraw
+    - TransactionTypeTransfer
+  models.TransactionsResponse:
+    properties:
+      transactions:
+        items:
+          $ref: '#/definitions/models.TransactionResponse'
+        type: array
+    type: object
+  models.TransferRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      from_account_id:
+        type: integer
+      to_account_id:
+        type: integer
+    required:
+    - amount
+    - from_account_id
+    - to_account_id
+    type: object
+  models.UserResponse:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: integer
+      token:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для онлайн-банкинга
+  title: Bank Service API
+  version: "1.0"
+paths:
+  /api/accounts:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все счета тестового пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение всех счетов пользователя
+      tags:
+      - accounts
+    post:
+      consumes:
+      - application/json
+      description: Создает новый счет для тестового пользователя
+      parameters:
+      - description: Данные для создания счета
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AccountCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AccountResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Создание нового счета
+      tags:
+      - accounts
+  /api/accounts/{account_id}/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все транзакции счета
+      parameters:
+      - description: ID счета
+        in: path
+        name: account_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TransactionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение транзакций счета
+      tags:
+      - transactions
+  /api/accounts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает счет по ID
+      parameters:
+      - description: ID счета
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение счета по ID
+      tags:
+      - accounts
+  /api/otp/generate:
+    post:
+      consumes:
+      - application/json
+      description: Генерирует новый OTP-код для тестового пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OTPResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Генерация OTP-кода
+      tags:
+      - otp
+  /api/otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет OTP-код тестового пользователя
+      parameters:
+      - description: Данные для проверки OTP-кода
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.OTPVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Проверка OTP-кода
+      tags:
+      - otp
+  /api/transactions/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Выполняет перевод средств между счетами
+      parameters:
+      - description: Данные для перевода
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransferRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.TransactionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Перевод средств между счетами
+      tags:
+      - transactions
+  /api/users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает профиль тестового пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение профиля пользователя
+      tags:
+      - users
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
